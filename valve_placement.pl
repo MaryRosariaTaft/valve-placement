@@ -79,6 +79,7 @@ p(G,NV,Vv,Cost) :-
     get_arg_in_multilist(EdgesLoL,[3,1],Vv), % Extracts the decision variables in the list Vv
     occurrences(1, Vv, NV), % Imposes that there are exactly NV valves in the network
 
+    % REDUNDANCY BLOCK 1 OF 2 ======================
     find_all_minimal_cycles(G, MCycles), % Finds the minimal cycles (faces boundaries) in the network
     
     (foreach(Cycle, MCycles), param(Gedges) do
@@ -89,18 +90,20 @@ p(G,NV,Vv,Cost) :-
         append(VCycle,VDCycle,AllCycle),
         occurrences_not_eq(AllCycle,1) % In each cycle, there cannot be 1 valve
     ),
+    % ================== END REDUNDANCY BLOCK 1 OF 2
 
     arg(1, Gedges, GedgesS),
     get_arg_in_multilist(GedgesS,[3,1],GedgesSV),
     GedgesSV::1, % Put a valve in all arcs outgoing from the source of water
 
-
+    % REDUNDANCY BLOCK 2 OF 2 ======================
     (for(I, 2, NN), param(Gedges) do
         arg(I, Gedges, NEdges),
         get_arg_in_multilist(NEdges,[3,1],VNEdges),
         (VNEdges=[X,_] -> X=0 ; true) % symmetry breaking: if a node has exactly 2 outgoing edges, there is no point in adding two valves, and they are symmetric
     ),
-
+    % ================== END REDUNDANCY BLOCK 2 OF 2
+    
     set_var_name(SegC,"SegC"), % Sets the variable names for debugging purposes
     set_var_name(NegSegC,"NegSegC"),
     Cost+SolNegSegC#=0,
@@ -111,8 +114,10 @@ p(G,NV,Vv,Cost) :-
 
     swap_edgeslist(EdgesList,SwappedEdgesList),
 
+    % LOWER BOUND BLOCK ============================
     impose_lower_bound_constraint(EdgesLoL,Gedges,Cost),
-
+    % ======================== END LOWER BOUND BLOCK
+    
     no_two_valves_same_arc(EdgesList),
 
         minimize( 
